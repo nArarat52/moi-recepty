@@ -1,0 +1,16 @@
+.tmp/
+backend/.venv/
+**/__pycache__/
+.pytest_cache/
+android/.gradle/
+android/.kotlin/
+android/local.properties
+android/**/build/
+.env
+backups/
+
+**/.idea/
+*.jks
+*.keystore
+.env.*
+!.env.example

@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "duration_seconds": 1.641,
+  "counts": {
+    "users": 4,
+    "recipes": 20,
+    "reviews": 5,
+    "groups": 2,
+    "memberships": 5,
+    "dishes": 2,
+    "attempts": 6,
+    "images": 1
+  },
+  "media_digest_matches": true,
+  "includes_temporary_media_fixture": true
+}

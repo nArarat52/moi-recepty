@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuites tests="7" failures="0" errors="0" skipped="0" time="73.165" timestamp="2026-11-16T18:22:55" hostname="localhost">
+  <testsuite name="ru.recipe.app.AcceptanceUiTest" tests="7" failures="0" errors="0" skipped="0" time="71.168" timestamp="2026-11-16T18:22:55" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone(AVD) - 15" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="expired_group_is_read_only" classname="ru.recipe.app.AcceptanceUiTest" time="12.909" />
+    <testcase name="form_validation_keeps_input" classname="ru.recipe.app.AcceptanceUiTest" time="8.955" />
+    <testcase name="login_and_server_favorite" classname="ru.recipe.app.AcceptanceUiTest" time="6.656" />
+    <testcase name="guest_catalog_search_detail" classname="ru.recipe.app.AcceptanceUiTest" time="4.176" />
+    <testcase name="private_history_copy_and_cancel" classname="ru.recipe.app.AcceptanceUiTest" time="8.444" />
+    <testcase name="review_create_edit_delete" classname="ru.recipe.app.AcceptanceUiTest" time="8.093" />
+    <testcase name="reads_recover_after_idle_connection" classname="ru.recipe.app.AcceptanceUiTest" time="21.935" />
+  </testsuite>
+</testsuites>
