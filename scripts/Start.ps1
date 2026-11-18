@@ -1,4 +1,6 @@
-﻿$ErrorActionPreference='Stop'
+﻿param([switch]$UpdateDemoPassword)
+
+$ErrorActionPreference='Stop'
 $projectRoot=Split-Path -Parent $PSScriptRoot
 Push-Location $projectRoot
 try {
@@ -12,7 +14,31 @@ try {
         Start-Sleep -Seconds 1
     }
     if(-not $ready){throw 'Сервер не отвечает. Проверьте docker compose logs api.'}
-    docker compose exec -T api python -m app.seed
+    $passwordPath = Join-Path $projectRoot '.tmp\demo-account-password.txt'
+    if (!(Test-Path -LiteralPath $passwordPath)) {
+        New-Item -ItemType Directory -Path (Split-Path -Parent $passwordPath) -Force | Out-Null
+        $bytes = New-Object byte[] 24
+        $generator = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+        try { $generator.GetBytes($bytes) } finally { $generator.Dispose() }
+        $temporaryPath = "$passwordPath.$PID"
+        [IO.File]::WriteAllText($temporaryPath, [Convert]::ToBase64String($bytes))
+        try {
+            [IO.File]::Move($temporaryPath, $passwordPath)
+        } catch [IO.IOException] {
+            if (!(Test-Path -LiteralPath $passwordPath)) { throw }
+        } finally {
+            if (Test-Path -LiteralPath $temporaryPath) { Remove-Item -LiteralPath $temporaryPath }
+        }
+    }
+    $seedInput = @([IO.File]::ReadAllText($passwordPath).TrimEnd([char]13, [char]10))
+    $seedArgs = @('--password-stdin')
+    if ($UpdateDemoPassword) {
+        $currentPassword = Read-Host 'Введите действующий пароль демо-аккаунтов' -AsSecureString
+        $seedInput += [PSCredential]::new('demo', $currentPassword).GetNetworkCredential().Password
+        $seedArgs += '--update-demo-password'
+    }
+    $OutputEncoding = [Text.UTF8Encoding]::new($false)
+    $seedInput | docker compose exec -T api python -m app.seed @seedArgs
     if($LASTEXITCODE -ne 0){throw 'Не удалось подготовить тестовые данные.'}
     $sdkRoot=if($env:ANDROID_HOME){$env:ANDROID_HOME}else{Join-Path $env:LOCALAPPDATA 'Android\Sdk'}
     $adb=Join-Path $sdkRoot 'platform-tools\adb.exe'
@@ -27,5 +53,6 @@ try {
         }
     }
     Write-Host 'Сервер готов: http://127.0.0.1:8000/docs'
-    Write-Host 'Эмулятор: http://10.0.2.2:8000. Аккаунты: anna, mikhail, olga, ivan. Пароль: Recipe2026!'
+    Write-Host 'Эмулятор: http://10.0.2.2:8000. Аккаунты: anna, mikhail, olga, ivan.'
+    Write-Host "Пароль демо-аккаунтов сохранён в $passwordPath"
 } finally { Pop-Location }

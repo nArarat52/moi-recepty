@@ -1,6 +1,7 @@
 import io
 import time
 from concurrent.futures import ThreadPoolExecutor
+from secrets import token_urlsafe
 from uuid import uuid4
 import psycopg
 import pytest
@@ -9,6 +10,8 @@ from PIL import Image
 from app import db as dbmod
 from app.main import app, hasher
 from app.seed import seed
+
+DEMO_PASSWORD = token_urlsafe(24)
 
 def key(): return {'Idempotency-Key':str(uuid4())}
 
@@ -20,7 +23,7 @@ def isolated_database():
     with psycopg.connect(base,autocommit=True) as db: db.execute(sql.SQL('CREATE SCHEMA {}').format(sql.Identifier(schema)))
     dbmod.DATABASE_URL=base+('?options=-csearch_path%3D'+schema)
     with TestClient(app) as c:
-        seed(True)
+        seed(True, demo_password=DEMO_PASSWORD)
         yield c
     dbmod.DATABASE_URL=base
     with psycopg.connect(base,autocommit=True) as db: db.execute(sql.SQL('DROP SCHEMA {} CASCADE').format(sql.Identifier(schema)))
@@ -29,7 +32,7 @@ def isolated_database():
 def c(isolated_database): return isolated_database
 
 def token(c,login):
-    r=c.post('/auth/login',json={'login':login,'password':'Recipe2026!'})
+    r=c.post('/auth/login',json={'login':login,'password':DEMO_PASSWORD})
     assert r.status_code==200,r.text
     return {'Authorization':'Bearer '+r.json()['token']}
 
@@ -59,14 +62,15 @@ def test_catalog_search_pagination_performance(c):
     assert c.get('/recipes?q=%25').json()['total']==0
 
 def test_registration_password_hash_and_revocation(c):
-    data={'login':'New_User','name':' Новый пользователь ','password':' spaced password '}
+    password = f' {token_urlsafe(24)} '
+    data={'login':'New_User','name':' Новый пользователь ','password':password}
     r=c.post('/auth/register',json=data);assert r.status_code==201
     h={'Authorization':'Bearer '+r.json()['token']}
     assert c.post('/auth/register',json=data).status_code==409
-    assert c.post('/auth/login',json={'login':'new_user','password':'spaced password'}).status_code==401
+    assert c.post('/auth/login',json={'login':'new_user','password':password.strip()}).status_code==401
     with dbmod.connect() as db:
         ph=db.execute("SELECT password_hash FROM users WHERE login='new_user'").fetchone()['password_hash']
-        assert ph.startswith('$argon2id$v=19$m=65536,t=3,p=4$') and hasher.verify(ph,' spaced password ')
+        assert ph.startswith('$argon2id$v=19$m=65536,t=3,p=4$') and hasher.verify(ph,password)
     assert c.post('/auth/logout',headers=h).status_code==200
     assert c.get('/me',headers=h).status_code==401
 

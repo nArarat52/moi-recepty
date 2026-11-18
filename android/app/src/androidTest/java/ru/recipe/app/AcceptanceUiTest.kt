@@ -33,7 +33,10 @@ class AcceptanceUiTest {
         compose.onNodeWithText("Профиль").performClick()
         click("Войти")
         compose.onNodeWithText("Логин").performTextInput(login)
-        compose.onNodeWithText("Пароль").performTextInput("Recipe2026!")
+        val password = requireNotNull(InstrumentationRegistry.getArguments().getString("demo_password")) {
+            "Передайте demo_password в аргументах инструментальных тестов."
+        }
+        compose.onNodeWithText("Пароль").performTextInput(password)
         click("Войти")
         waitText("Чечевичный суп")
     }

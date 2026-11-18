@@ -5,12 +5,17 @@ SDK 36, JDK 17+; проверка выполнена с JDK 21. Gradle Wrapper 9
 
 ## Сервер
 
-Из корня проекта:
+На Windows достаточно запустить `START.cmd` из корня проекта. Скрипт создаёт
+локальный пароль и сохраняет его в `.tmp/demo-account-password.txt`.
+Эта папка исключена из Git.
+
+При ручном запуске из корня проекта сначала поднимите сервер, затем введите
+свой пароль демо-аккаунтов, когда скрипт заполнения базы его запросит:
 
     docker compose up -d --build
-    docker compose exec -T api python -m app.seed
+    docker compose exec api python -m app.seed
 
-Повторная подготовка демонстрационных данных не создаёт дубликаты.
+При повторной подготовке используйте тот же пароль.
 Постоянный том moi-recepty_recipe_db сохраняется после остановки.
 Остановка без удаления данных:
 
@@ -32,6 +37,19 @@ DEMO_MODE=true включает активацию и завершение уч�
     docker compose logs --tail 100 api
 
 Сервер не выводит токены и пароли в сообщения об ошибках, журнал HTTP-доступа отключён.
+
+## Смена пароля в существующей демо-базе
+
+Если демо-база создана предыдущей версией, выполните из корня проекта:
+
+    .\START.cmd --update-demo-password
+
+Введите действующий пароль демо-аккаунтов. Скрипт установит пароль из
+`.tmp/demo-account-password.txt` и завершит старые сеансы этих аккаунтов.
+Рецепты, группы и история сохранятся.
+
+При ручном запуске используйте `docker compose exec api python -m app.seed --update-demo-password`
+и введите новый и действующий пароли по запросу.
 
 ## Сборка Android
 
@@ -60,9 +78,10 @@ UI-тесты используют демонстрационные аккаун
 они очищают локальную сессию приложения, меняют избранное и создают/удаляют тестовый отзыв.
 Перед прогоном сервер должен содержать исходный набор демонстрационных данных.
 
+    $demoPassword = (Get-Content .tmp/demo-account-password.txt -Raw).TrimEnd([char]13, [char]10)
     cd android
     adb reverse tcp:8000 tcp:8000
-    .\gradlew.bat connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.base_url=http://127.0.0.1:8000 lintDebug
+    .\gradlew.bat connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.base_url=http://127.0.0.1:8000 "-Pandroid.testInstrumentationRunnerArguments.demo_password=$demoPassword" lintDebug
 
 Прямой ADB-туннель используется и для эмулятора: на проверенном компьютере
 его NAT-адрес 10.0.2.2 периодически обрывал соединения. Параметр base_url
